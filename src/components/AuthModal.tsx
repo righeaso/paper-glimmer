@@ -1,5 +1,6 @@
 import {FormEvent, useEffect, useState} from 'react';
 import {AlertCircle, CheckCircle2, Cloud, X} from 'lucide-react';
+import {getSupabaseEnvDiagnostic} from '../lib/supabase';
 
 export interface AuthActionResult {
   error: string | null;
@@ -64,7 +65,7 @@ export function AuthModal({
 
     if (!isSupabaseReady) {
       setErrorMsg(
-        '尚未設定 Supabase 環境變數（請確認已設定 VITE_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_URL 與 PUBLISHABLE_KEY 後重新部署）。',
+        `尚未完成 Supabase 環境變數設定（${getSupabaseEnvDiagnostic()}）。請確認在 Vercel 設定 VITE_SUPABASE_URL 與 VITE_SUPABASE_ANON_KEY 後重新部署（Redeploy）。`,
       );
       return;
     }
@@ -151,10 +152,17 @@ export function AuthModal({
             className="flex items-start gap-2 text-xs text-[#9E4737] bg-[#9E4737]/8 border border-[#9E4737]/25 rounded-[8px] px-3 py-2.5 leading-relaxed"
           >
             <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-            <span>
-              尚未設定 Supabase 環境變數（VITE_SUPABASE_URL /
-              NEXT_PUBLIC_SUPABASE_URL 與金鑰），目前無法連線登入。
-            </span>
+            <div className="space-y-1">
+              <p>
+                尚未完成 Supabase 環境變數設定，目前無法連線登入。請確認已設定{' '}
+                <code className="font-mono">VITE_SUPABASE_URL</code> 與{' '}
+                <code className="font-mono">VITE_SUPABASE_ANON_KEY</code>{' '}
+                並重新部署。
+              </p>
+              <p className="text-[11px] opacity-90 break-words">
+                目前偵測狀態：{getSupabaseEnvDiagnostic()}
+              </p>
+            </div>
           </div>
         )}
 

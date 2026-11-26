@@ -1,6 +1,7 @@
 import {FormEvent, useEffect, useState} from 'react';
 import {Check, Cloud, LogOut, Pencil, RefreshCw, X} from 'lucide-react';
 import {REACTION_OPTIONS} from '../data/diaryConstants';
+import {getSupabaseEnvDiagnostic} from '../lib/supabase';
 import {computeWritingDaysFromDiaries} from '../services/supabaseSync';
 import {DiaryEntry, ReactionKey, UserProfile} from '../types/diary';
 import type {AuthActionResult} from './AuthModal';
@@ -81,7 +82,7 @@ export function MyNotebookTab({
 
     if (!isSupabaseReady) {
       setAuthError(
-        '尚未設定 Supabase 環境變數（請確認已設定 VITE_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_URL 與 PUBLISHABLE_KEY）。',
+        `尚未完成 Supabase 環境變數設定（${getSupabaseEnvDiagnostic()}）。請確認已設定 VITE_SUPABASE_URL 與 VITE_SUPABASE_ANON_KEY。`,
       );
       return;
     }
@@ -330,13 +331,19 @@ export function MyNotebookTab({
               </p>
 
               {!isSupabaseReady && (
-                <p
+                <div
                   role="alert"
-                  className="text-xs text-[#9E4737] bg-[#9E4737]/8 border border-[#9E4737]/25 rounded-[8px] px-3 py-2 leading-relaxed"
+                  className="text-xs text-[#9E4737] bg-[#9E4737]/8 border border-[#9E4737]/25 rounded-[8px] px-3 py-2 leading-relaxed space-y-1"
                 >
-                  尚未設定 Supabase 環境變數（請確認已設定
-                  VITE_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_URL 與金鑰）。
-                </p>
+                  <p>
+                    尚未完成 Supabase 環境變數設定（需設定{' '}
+                    <code className="font-mono">VITE_SUPABASE_URL</code> 與{' '}
+                    <code className="font-mono">VITE_SUPABASE_ANON_KEY</code>）。
+                  </p>
+                  <p className="text-[11px] opacity-90 break-words">
+                    目前偵測狀態：{getSupabaseEnvDiagnostic()}
+                  </p>
+                </div>
               )}
 
               <div className="grid grid-cols-2 gap-1.5 p-1 bg-[#F3EFE6] rounded-[8px]">

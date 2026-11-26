@@ -8,7 +8,11 @@ import {PWAInstallButton} from './components/PWAInstallButton';
 import {UnlockBanner} from './components/UnlockBanner';
 import {WriteDiary} from './components/WriteDiary';
 import {DEFAULT_EMPTY_PROFILE} from './data/diaryConstants';
-import {isSupabaseConfigured, supabase} from './lib/supabase';
+import {
+  getSupabaseEnvDiagnostic,
+  isSupabaseConfigured,
+  supabase,
+} from './lib/supabase';
 import {
   computeWritingDaysFromDiaries,
   loadUserSnapshotFromSupabase,
@@ -700,8 +704,7 @@ export default function App() {
   ): Promise<AuthActionResult> => {
     if (!supabase) {
       return {
-        error:
-          '尚未設定 Supabase 環境變數（請確認 VITE_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_URL 與金鑰）。',
+        error: `尚未設定 Supabase 環境變數（${getSupabaseEnvDiagnostic()}）。`,
       };
     }
     try {
@@ -724,8 +727,7 @@ export default function App() {
   ): Promise<AuthActionResult> => {
     if (!supabase) {
       return {
-        error:
-          '尚未設定 Supabase 環境變數（請確認 VITE_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_URL 與金鑰）。',
+        error: `尚未設定 Supabase 環境變數（${getSupabaseEnvDiagnostic()}）。`,
       };
     }
     try {
