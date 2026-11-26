@@ -4,6 +4,7 @@ import {REACTION_OPTIONS} from '../data/diaryConstants';
 import {computeWritingDaysFromDiaries} from '../services/supabaseSync';
 import {DiaryEntry, ReactionKey, UserProfile} from '../types/diary';
 import {DiaryCard} from './DiaryCard';
+import {PWAInstallButton} from './PWAInstallButton';
 
 interface MyNotebookTabProps {
   currentUserId: string | null;
@@ -409,6 +410,9 @@ export function MyNotebookTab({
           )}
         </div>
       )}
+
+      {/* PWA Home Screen Install Prompt Card (auto-hidden when already installed) */}
+      <PWAInstallButton variant="card" />
 
       {/* My Diaries Archive */}
       <div>

@@ -3,6 +3,7 @@ import {BookOpen, BookMarked, HeartHandshake, PenLine, X} from 'lucide-react';
 import {ConnectionsTab} from './components/ConnectionsTab';
 import {DiaryWall} from './components/DiaryWall';
 import {MyNotebookTab} from './components/MyNotebookTab';
+import {PWAInstallButton} from './components/PWAInstallButton';
 import {UnlockBanner} from './components/UnlockBanner';
 import {WriteDiary} from './components/WriteDiary';
 import {DEFAULT_EMPTY_PROFILE} from './data/diaryConstants';
@@ -788,19 +789,22 @@ export default function App() {
               Paper Glimmer
             </span>
           </div>
-          {authUserId ? (
-            <span className="text-xs text-[#7A756E] whitespace-nowrap">
-              {userProfile.nickname}
-            </span>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setActiveTab('notebook')}
-              className="text-xs text-[#5C6B54] hover:text-[#2C2A29] font-medium whitespace-nowrap cursor-pointer"
-            >
-              登入帳號
-            </button>
-          )}
+          <div className="flex items-center gap-2 shrink-0">
+            <PWAInstallButton variant="compact" />
+            {authUserId ? (
+              <span className="text-xs text-[#7A756E] whitespace-nowrap">
+                {userProfile.nickname}
+              </span>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setActiveTab('notebook')}
+                className="text-xs text-[#5C6B54] hover:text-[#2C2A29] font-medium whitespace-nowrap cursor-pointer"
+              >
+                登入帳號
+              </button>
+            )}
+          </div>
         </header>
 
         {/* Visible Sync Error Alert (only shown if a Supabase write/read fails) */}

@@ -1,0 +1,31 @@
+{
+  "id": "/",
+  "name": "紙間微光 Paper Glimmer",
+  "short_name": "紙間微光",
+  "description": "無印簡約文青風日記交友空間，透過溫暖的生活隨筆與雙向心意回應，開啟安靜療癒的一對一對話。",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#F9F7F2",
+  "theme_color": "#F9F7F2",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
