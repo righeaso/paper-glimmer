@@ -3,6 +3,7 @@ import {Check, Cloud, LogOut, Pencil, RefreshCw, X} from 'lucide-react';
 import {REACTION_OPTIONS} from '../data/diaryConstants';
 import {computeWritingDaysFromDiaries} from '../services/supabaseSync';
 import {DiaryEntry, ReactionKey, UserProfile} from '../types/diary';
+import type {AuthActionResult} from './AuthModal';
 import {DiaryCard} from './DiaryCard';
 import {PWAInstallButton} from './PWAInstallButton';
 
@@ -16,12 +17,12 @@ interface MyNotebookTabProps {
   syncError: string | null;
   syncNotice: string | null;
   onUpdateProfile: (updates: {nickname: string; bio: string}) => void;
-  onSignIn: (email: string, password: string) => Promise<string | null>;
+  onSignIn: (email: string, password: string) => Promise<AuthActionResult>;
   onSignUp: (
     email: string,
     password: string,
     nickname?: string,
-  ) => Promise<string | null>;
+  ) => Promise<AuthActionResult>;
   onSignOut: () => Promise<void>;
   onManualSync: () => Promise<void>;
 }
@@ -50,6 +51,7 @@ export function MyNotebookTab({
   const [passwordInput, setPasswordInput] = useState('');
   const [signupNicknameInput, setSignupNicknameInput] = useState('');
   const [authError, setAuthError] = useState<string | null>(null);
+  const [authNotice, setAuthNotice] = useState<string | null>(null);
   const [authBusy, setAuthBusy] = useState(false);
 
   useEffect(() => {
@@ -74,6 +76,16 @@ export function MyNotebookTab({
 
   const handleAuthSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    setAuthError(null);
+    setAuthNotice(null);
+
+    if (!isSupabaseReady) {
+      setAuthError(
+        '尚未設定 Supabase 環境變數（請確認已設定 VITE_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_URL 與 PUBLISHABLE_KEY）。',
+      );
+      return;
+    }
+
     const cleanEmail = emailInput.trim();
     if (!cleanEmail || !cleanEmail.includes('@')) {
       setAuthError('請輸入有效的電子信箱。');
@@ -84,19 +96,28 @@ export function MyNotebookTab({
       return;
     }
 
-    setAuthError(null);
     setAuthBusy(true);
-    const err =
-      authMode === 'signin'
-        ? await onSignIn(cleanEmail, passwordInput)
-        : await onSignUp(cleanEmail, passwordInput, signupNicknameInput.trim());
-    setAuthBusy(false);
+    try {
+      const result =
+        authMode === 'signin'
+          ? await onSignIn(cleanEmail, passwordInput)
+          : await onSignUp(cleanEmail, passwordInput, signupNicknameInput.trim());
 
-    if (err) {
-      setAuthError(err);
-    } else {
-      setPasswordInput('');
-      setSignupNicknameInput('');
+      if (result.error) {
+        setAuthError(result.error);
+      } else if (result.notice) {
+        setAuthNotice(result.notice);
+        setPasswordInput('');
+      } else {
+        setPasswordInput('');
+        setSignupNicknameInput('');
+      }
+    } catch (err) {
+      setAuthError(
+        err instanceof Error ? err.message : '登入或註冊過程發生未預期錯誤。',
+      );
+    } finally {
+      setAuthBusy(false);
     }
   };
 
@@ -241,8 +262,7 @@ export function MyNotebookTab({
       </div>
 
       {/* Supabase Cloud Account Sync Card */}
-      {isSupabaseReady && (
-        <div className="bg-[#FFFDF9] border border-[#E6E1D6] rounded-[12px] p-5 shadow-[0_2px_12px_rgba(44,42,41,0.03)]">
+      <div className="bg-[#FFFDF9] border border-[#E6E1D6] rounded-[12px] p-5 shadow-[0_2px_12px_rgba(44,42,41,0.03)]">
           <div className="flex items-center justify-between gap-2 mb-2">
             <div className="flex items-center gap-2">
               <Cloud className="w-4 h-4 text-[#5C6B54]" />
@@ -308,6 +328,16 @@ export function MyNotebookTab({
               <p className="text-xs text-[#7A756E] leading-relaxed">
                 登入或建立帳號後，你的日記、心情回應與心意對話將保存至雲端資料庫。
               </p>
+
+              {!isSupabaseReady && (
+                <p
+                  role="alert"
+                  className="text-xs text-[#9E4737] bg-[#9E4737]/8 border border-[#9E4737]/25 rounded-[8px] px-3 py-2 leading-relaxed"
+                >
+                  尚未設定 Supabase 環境變數（請確認已設定
+                  VITE_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_URL 與金鑰）。
+                </p>
+              )}
 
               <div className="grid grid-cols-2 gap-1.5 p-1 bg-[#F3EFE6] rounded-[8px]">
                 <button
@@ -395,6 +425,12 @@ export function MyNotebookTab({
                 </p>
               )}
 
+              {authNotice && (
+                <p role="status" className="text-xs text-[#5C6B54]">
+                  {authNotice}
+                </p>
+              )}
+
               <button
                 type="submit"
                 disabled={authBusy}
@@ -408,8 +444,7 @@ export function MyNotebookTab({
               </button>
             </form>
           )}
-        </div>
-      )}
+      </div>
 
       {/* PWA Home Screen Install Prompt Card (auto-hidden when already installed) */}
       <PWAInstallButton variant="card" />

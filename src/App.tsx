@@ -1,5 +1,6 @@
 import {useCallback, useEffect, useRef, useState} from 'react';
 import {BookOpen, BookMarked, HeartHandshake, PenLine, X} from 'lucide-react';
+import {AuthModal, type AuthActionResult} from './components/AuthModal';
 import {ConnectionsTab} from './components/ConnectionsTab';
 import {DiaryWall} from './components/DiaryWall';
 import {MyNotebookTab} from './components/MyNotebookTab';
@@ -92,6 +93,7 @@ export default function App() {
 
   const [authUserId, setAuthUserId] = useState<string | null>(null);
   const [authEmail, setAuthEmail] = useState<string | null>(null);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [syncNotice, setSyncNotice] = useState<string | null>(null);
@@ -359,6 +361,7 @@ export default function App() {
       if (userChanged) {
         resetStateForAccount(nextId, metaNickname, nextEmail);
         if (nextId) {
+          setIsAuthModalOpen(false);
           void syncFromCloud(nextId, metaNickname, false, nextEmail);
         }
       }
@@ -694,38 +697,70 @@ export default function App() {
   const handleSignIn = async (
     email: string,
     password: string,
-  ): Promise<string | null> => {
-    if (!supabase) return '尚未設定 Supabase 連線資訊';
-    resetStateForAccount(null);
-    const {error} = await supabase.auth.signInWithPassword({email, password});
-    return error ? error.message : null;
+  ): Promise<AuthActionResult> => {
+    if (!supabase) {
+      return {
+        error:
+          '尚未設定 Supabase 環境變數（請確認 VITE_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_URL 與金鑰）。',
+      };
+    }
+    try {
+      const {error} = await supabase.auth.signInWithPassword({email, password});
+      if (error) {
+        return {error: error.message};
+      }
+      return {error: null};
+    } catch (err) {
+      return {
+        error: err instanceof Error ? err.message : '登入連線失敗，請稍後再試。',
+      };
+    }
   };
 
   const handleSignUp = async (
     email: string,
     password: string,
     nickname?: string,
-  ): Promise<string | null> => {
-    if (!supabase) return '尚未設定 Supabase 連線資訊';
-    resetStateForAccount(null);
-    const emailFallbackNick = email.split('@')[0]?.trim();
-    const cleanNick =
-      nickname?.trim() || emailFallbackNick || DEFAULT_EMPTY_PROFILE.nickname;
-    const {data, error} = await supabase.auth.signUp({
-      email,
-      password,
-      options: {data: {nickname: cleanNick}},
-    });
-    if (error) return error.message;
-
-    if (data.user) {
-      await syncProfileToSupabase(data.user.id, {
-        ...DEFAULT_EMPTY_PROFILE,
-        nickname: cleanNick,
-        writingDays: 0,
-      });
+  ): Promise<AuthActionResult> => {
+    if (!supabase) {
+      return {
+        error:
+          '尚未設定 Supabase 環境變數（請確認 VITE_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_URL 與金鑰）。',
+      };
     }
-    return null;
+    try {
+      const emailFallbackNick = email.split('@')[0]?.trim();
+      const cleanNick =
+        nickname?.trim() || emailFallbackNick || DEFAULT_EMPTY_PROFILE.nickname;
+      const {data, error} = await supabase.auth.signUp({
+        email,
+        password,
+        options: {data: {nickname: cleanNick}},
+      });
+      if (error) return {error: error.message};
+
+      if (data.user && data.session) {
+        await syncProfileToSupabase(data.user.id, {
+          ...DEFAULT_EMPTY_PROFILE,
+          nickname: cleanNick,
+          writingDays: 0,
+        });
+        return {error: null};
+      }
+
+      if (data.user && !data.session) {
+        return {
+          error: null,
+          notice: '註冊成功！請至信箱點擊驗證信完成啟用後再登入。',
+        };
+      }
+
+      return {error: null};
+    } catch (err) {
+      return {
+        error: err instanceof Error ? err.message : '註冊連線失敗，請稍後再試。',
+      };
+    }
   };
 
   const handleSignOut = async () => {
@@ -766,6 +801,15 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#F2EFE8]">
+      {/* Auth Modal (Sign In / Sign Up) */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        isSupabaseReady={isSupabaseConfigured}
+        onClose={() => setIsAuthModalOpen(false)}
+        onSignIn={handleSignIn}
+        onSignUp={handleSignUp}
+      />
+
       {/* Mutual Unlock Notification Banner */}
       <UnlockBanner
         partnerName={bannerInfo?.partnerName ?? null}
@@ -798,8 +842,8 @@ export default function App() {
             ) : (
               <button
                 type="button"
-                onClick={() => setActiveTab('notebook')}
-                className="text-xs text-[#5C6B54] hover:text-[#2C2A29] font-medium whitespace-nowrap cursor-pointer"
+                onClick={() => setIsAuthModalOpen(true)}
+                className="min-h-[36px] px-2.5 rounded-[8px] text-xs text-[#5C6B54] hover:text-[#2C2A29] hover:bg-[#F3EFE6] font-medium whitespace-nowrap cursor-pointer transition-colors"
               >
                 登入帳號
               </button>
@@ -843,9 +887,13 @@ export default function App() {
               onToggleReaction={handleToggleReaction}
               onOpenPartnerChat={handleOpenPartnerChat}
               onUpdateTodaysDiary={handleUpdateTodaysDiary}
-              onGoToWriteOrSignIn={() =>
-                setActiveTab(authUserId ? 'write' : 'notebook')
-              }
+              onGoToWriteOrSignIn={() => {
+                if (authUserId) {
+                  setActiveTab('write');
+                } else {
+                  setIsAuthModalOpen(true);
+                }
+              }}
             />
           )}
 
@@ -856,7 +904,7 @@ export default function App() {
               todaysDiary={todaysDiary}
               onPublishDiary={handlePublishDiary}
               onUpdateTodaysDiary={handleUpdateTodaysDiary}
-              onGoToSignIn={() => setActiveTab('notebook')}
+              onGoToSignIn={() => setIsAuthModalOpen(true)}
             />
           )}
 
