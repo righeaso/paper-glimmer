@@ -1,9 +1,22 @@
 import {FormEvent, useEffect, useState} from 'react';
-import {Check, Cloud, LogOut, Pencil, RefreshCw, X} from 'lucide-react';
+import {
+  Check,
+  Cloud,
+  LogOut,
+  Pencil,
+  RefreshCw,
+  ShieldBan,
+  X,
+} from 'lucide-react';
 import {REACTION_OPTIONS} from '../data/diaryConstants';
 import {getSupabaseEnvDiagnostic} from '../lib/supabase';
 import {computeWritingDaysFromDiaries} from '../services/supabaseSync';
-import {DiaryEntry, ReactionKey, UserProfile} from '../types/diary';
+import {
+  BlockedUserItem,
+  DiaryEntry,
+  ReactionKey,
+  UserProfile,
+} from '../types/diary';
 import type {AuthActionResult} from './AuthModal';
 import {DiaryCard} from './DiaryCard';
 import {PWAInstallButton} from './PWAInstallButton';
@@ -12,12 +25,14 @@ interface MyNotebookTabProps {
   currentUserId: string | null;
   profile: UserProfile;
   myDiaries: DiaryEntry[];
+  blockedUsers: BlockedUserItem[];
   isSupabaseReady: boolean;
   authEmail: string | null;
   isSyncing: boolean;
   syncError: string | null;
   syncNotice: string | null;
   onUpdateProfile: (updates: {nickname: string; bio: string}) => void;
+  onUnblockUser: (userId: string) => void;
   onSignIn: (email: string, password: string) => Promise<AuthActionResult>;
   onSignUp: (
     email: string,
@@ -32,12 +47,14 @@ export function MyNotebookTab({
   currentUserId,
   profile,
   myDiaries,
+  blockedUsers,
   isSupabaseReady,
   authEmail,
   isSyncing,
   syncError,
   syncNotice,
   onUpdateProfile,
+  onUnblockUser,
   onSignIn,
   onSignUp,
   onSignOut,
@@ -486,6 +503,54 @@ export function MyNotebookTab({
             ))
           )}
         </div>
+      </div>
+
+      {/* Blocked Users Management Card (Always visible) */}
+      <div className="bg-[#FFFDF9] border border-[#E6E1D6] rounded-[12px] p-5 shadow-[0_2px_12px_rgba(44,42,41,0.03)] space-y-3">
+        <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-[#E6E1D6]/80">
+          <div className="flex items-center gap-2">
+            <ShieldBan className="w-4 h-4 text-[#7A756E] shrink-0" />
+            <h3 className="font-serif text-[16px] font-semibold text-[#2C2A29]">
+              已封鎖名單（Blocked Users）
+            </h3>
+          </div>
+          <span className="text-xs text-[#7A756E] tabular-nums shrink-0">
+            {blockedUsers.length} 位
+          </span>
+        </div>
+
+        {blockedUsers.length === 0 ? (
+          <p className="text-xs text-[#7A756E] text-center py-2">
+            目前沒有已封鎖的筆友
+          </p>
+        ) : (
+          <ul className="divide-y divide-[#E6E1D6]/70">
+            {blockedUsers.map((user) => (
+              <li
+                key={user.userId}
+                className="py-2.5 first:pt-1 last:pb-1 flex items-center justify-between gap-3"
+              >
+                <div className="min-w-0">
+                  <p className="font-serif text-[14px] font-medium text-[#2C2A29] truncate">
+                    {user.name || '匿名筆友'}
+                  </p>
+                  {user.blockedAt && (
+                    <p className="text-[11px] text-[#7A756E]">
+                      封鎖時間：{user.blockedAt}
+                    </p>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onUnblockUser(user.userId)}
+                  className="min-h-[34px] px-3 rounded-[8px] border border-[#E6E1D6] bg-[#F9F7F2] hover:bg-[#F2ECE0] text-xs font-medium text-[#5C6B54] hover:text-[#2C2A29] transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+                >
+                  解除封鎖
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </section>
   );

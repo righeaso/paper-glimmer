@@ -1,7 +1,7 @@
 import {FormEvent, useState} from 'react';
 import {MessageCircle} from 'lucide-react';
 import {MOOD_OPTIONS, REACTION_OPTIONS} from '../data/diaryConstants';
-import {DiaryEntry, MoodTag, ReactionKey} from '../types/diary';
+import {DiaryEntry, MoodTag, ReactionKey, SafetyTarget} from '../types/diary';
 
 interface DiaryCardProps {
   diary: DiaryEntry;
@@ -18,6 +18,8 @@ interface DiaryCardProps {
     content: string;
     mood: MoodTag;
   }) => void;
+  onReportAuthor?: (target: SafetyTarget) => void;
+  onBlockAuthor?: (target: SafetyTarget) => void;
 }
 
 export function DiaryCard({
@@ -30,10 +32,12 @@ export function DiaryCard({
   onToggleReaction,
   onOpenPartnerChat,
   onSaveInlineEdit,
+  onReportAuthor,
+  onBlockAuthor,
 }: DiaryCardProps) {
   const isOwnedByCurrentUser = currentUserId
     ? diary.authorId === currentUserId || diary.userId === currentUserId
-    : Boolean(diary.isMine);
+    : false;
   const [isEditing, setIsEditing] = useState(false);
   const [editMood, setEditMood] = useState<MoodTag>(diary.mood);
   const [editTitle, setEditTitle] = useState(diary.title);
@@ -190,17 +194,45 @@ export function DiaryCard({
           : 'border-[#E6E1D6]'
       }`}
     >
-      {/* Top metadata & single-sided reaction hint / inline edit button */}
+      {/* Top metadata & inline edit / report & block buttons */}
       <div className="flex items-start justify-between gap-2 mb-3">
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[#7A756E]">
-          <span className="font-medium text-[#2C2A29]">{diary.authorName}</span>
-          <span aria-hidden="true">·</span>
-          <span>
-            {diary.isEdited && diary.updatedAt ? diary.updatedAt : diary.createdAt}
-            {diary.isEdited ? '（已編輯）' : ''}
-          </span>
-          <span aria-hidden="true">·</span>
-          <span className="text-[#5C6B54] font-medium">{diary.mood}</span>
+        <div className="min-w-0 space-y-1.5">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[#7A756E]">
+            <span className="font-medium text-[#2C2A29]">{diary.authorName}</span>
+            <span aria-hidden="true">·</span>
+            <span>
+              {diary.isEdited && diary.updatedAt
+                ? diary.updatedAt
+                : diary.createdAt}
+              {diary.isEdited ? '（已編輯）' : ''}
+            </span>
+            <span aria-hidden="true">·</span>
+            <span className="text-[#5C6B54] font-medium">{diary.mood}</span>
+          </div>
+
+          {!isOwnedByCurrentUser && hasPendingIncomingGlimmer && (
+            <div>
+              <span className="inline-block text-[11px] font-medium text-[#5C6B54] bg-[#5C6B54]/10 border border-[#5C6B54]/25 px-2 py-0.5 rounded-[6px] whitespace-nowrap">
+                對方曾回應過你的日記
+              </span>
+            </div>
+          )}
+
+          {!isOwnedByCurrentUser &&
+            !hasPendingIncomingGlimmer &&
+            isUnlockedPartner &&
+            onOpenPartnerChat && (
+              <div>
+                <button
+                  type="button"
+                  onClick={() => onOpenPartnerChat(diary.authorId)}
+                  className="inline-flex items-center gap-1 text-[11px] font-medium text-[#9E4737] hover:text-[#7E3528] bg-[#9E4737]/8 px-2 py-0.5 rounded-[6px] whitespace-nowrap transition-colors cursor-pointer"
+                >
+                  <MessageCircle className="w-3 h-3" />
+                  <span>已解鎖對話</span>
+                </button>
+              </div>
+            )}
         </div>
 
         {canInlineEdit && onSaveInlineEdit && (
@@ -213,25 +245,42 @@ export function DiaryCard({
           </button>
         )}
 
-        {!canInlineEdit && hasPendingIncomingGlimmer && (
-          <span className="text-[11px] font-medium text-[#5C6B54] bg-[#5C6B54]/10 border border-[#5C6B54]/25 px-2 py-0.5 rounded-[6px] whitespace-nowrap shrink-0">
-            對方曾回應過你的日記
-          </span>
+        {!isOwnedByCurrentUser && (onReportAuthor || onBlockAuthor) && (
+          <div className="flex items-center gap-1.5 shrink-0">
+            {onReportAuthor && (
+              <button
+                type="button"
+                onClick={() =>
+                  onReportAuthor({
+                    targetUserId: diary.authorId,
+                    targetName: diary.authorName,
+                    source: 'diary',
+                    diaryId: diary.id,
+                  })
+                }
+                className="min-h-[30px] px-2.5 rounded-[6px] border border-[#E6E1D6] bg-[#F9F7F2] hover:bg-[#F2ECE0] text-[11px] font-medium text-[#7A756E] hover:text-[#2C2A29] transition-colors whitespace-nowrap cursor-pointer"
+              >
+                檢舉
+              </button>
+            )}
+            {onBlockAuthor && (
+              <button
+                type="button"
+                onClick={() =>
+                  onBlockAuthor({
+                    targetUserId: diary.authorId,
+                    targetName: diary.authorName,
+                    source: 'diary',
+                    diaryId: diary.id,
+                  })
+                }
+                className="min-h-[30px] px-2.5 rounded-[6px] border border-[#E6E1D6] bg-[#F9F7F2] hover:bg-[#9E4737]/10 hover:border-[#9E4737]/40 text-[11px] font-medium text-[#7A756E] hover:text-[#9E4737] transition-colors whitespace-nowrap cursor-pointer"
+              >
+                封鎖
+              </button>
+            )}
+          </div>
         )}
-
-        {!canInlineEdit &&
-          !hasPendingIncomingGlimmer &&
-          isUnlockedPartner &&
-          onOpenPartnerChat && (
-            <button
-              type="button"
-              onClick={() => onOpenPartnerChat(diary.authorId)}
-              className="inline-flex items-center gap-1 text-[11px] font-medium text-[#9E4737] hover:text-[#7E3528] bg-[#9E4737]/8 px-2 py-0.5 rounded-[6px] whitespace-nowrap shrink-0 transition-colors cursor-pointer"
-            >
-              <MessageCircle className="w-3 h-3" />
-              <span>已解鎖對話</span>
-            </button>
-          )}
       </div>
 
       {/* Diary Title & Prose */}

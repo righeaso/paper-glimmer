@@ -83,3 +83,16 @@ export interface UserProfile {
 }
 
 export type TabKey = 'wall' | 'write' | 'connections' | 'notebook';
+
+export interface SafetyTarget {
+  targetUserId: string;
+  targetName: string;
+  source: 'diary' | 'chat';
+  diaryId?: string;
+}
+
+export interface BlockedUserItem {
+  userId: string;
+  name: string;
+  blockedAt?: string;
+}

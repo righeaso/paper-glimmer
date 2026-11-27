@@ -10,6 +10,7 @@ import {REACTION_OPTIONS} from '../data/diaryConstants';
 import {
   IncomingGlimmer,
   ReactionKey,
+  SafetyTarget,
   UnlockedConnection,
 } from '../types/diary';
 
@@ -20,6 +21,8 @@ interface ConnectionsTabProps {
   onSelectPartner: (partnerId: string | null) => void;
   onJumpToDiary: (diaryId: string) => void;
   onSendMessage: (partnerId: string, text: string) => void;
+  onReportPartner?: (target: SafetyTarget) => void;
+  onBlockPartner?: (target: SafetyTarget) => void;
 }
 
 function getReactionLabelWithEmoji(reaction: ReactionKey): string {
@@ -34,6 +37,8 @@ export function ConnectionsTab({
   onSelectPartner,
   onJumpToDiary,
   onSendMessage,
+  onReportPartner,
+  onBlockPartner,
 }: ConnectionsTabProps) {
   const [draft, setDraft] = useState('');
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -62,22 +67,57 @@ export function ConnectionsTab({
     return (
       <section aria-label="專屬對話空間" className="pt-2 flex flex-col min-h-[calc(100vh-160px)]">
         {/* Chat Sub-Header */}
-        <div className="flex items-center gap-2 pb-3 border-b border-[#E6E1D6]">
-          <button
-            type="button"
-            onClick={() => onSelectPartner(null)}
-            className="min-w-[44px] min-h-[44px] -ml-2 flex items-center justify-center text-[#7A756E] hover:text-[#2C2A29] rounded-[10px] transition-colors cursor-pointer"
-            aria-label="返回心意連結列表"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <div className="min-w-0 flex-1">
-            <h2 className="font-serif text-[17px] font-semibold text-[#2C2A29] truncate">
-              {activeChat.partnerName}
-            </h2>
-            <p className="text-[11px] text-[#7A756E]">
-              {activeChat.unlockedAt} 開啟對話
-            </p>
+        <div className="flex items-center justify-between gap-2 pb-3 border-b border-[#E6E1D6]">
+          <div className="flex items-center gap-2 min-w-0">
+            <button
+              type="button"
+              onClick={() => onSelectPartner(null)}
+              className="min-w-[44px] min-h-[44px] -ml-2 flex items-center justify-center text-[#7A756E] hover:text-[#2C2A29] rounded-[10px] transition-colors cursor-pointer shrink-0"
+              aria-label="返回心意連結列表"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <div className="min-w-0 flex-1">
+              <h2 className="font-serif text-[17px] font-semibold text-[#2C2A29] truncate">
+                {activeChat.partnerName}
+              </h2>
+              <p className="text-[11px] text-[#7A756E] truncate">
+                {activeChat.unlockedAt} 開啟對話
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1.5 shrink-0">
+            {onReportPartner && (
+              <button
+                type="button"
+                onClick={() =>
+                  onReportPartner({
+                    targetUserId: activeChat.partnerId,
+                    targetName: activeChat.partnerName,
+                    source: 'chat',
+                  })
+                }
+                className="min-h-[32px] px-2.5 rounded-[6px] border border-[#E6E1D6] bg-[#FFFDF9] hover:bg-[#F2ECE0] text-[11px] font-medium text-[#7A756E] hover:text-[#2C2A29] transition-colors whitespace-nowrap cursor-pointer"
+              >
+                檢舉
+              </button>
+            )}
+            {onBlockPartner && (
+              <button
+                type="button"
+                onClick={() =>
+                  onBlockPartner({
+                    targetUserId: activeChat.partnerId,
+                    targetName: activeChat.partnerName,
+                    source: 'chat',
+                  })
+                }
+                className="min-h-[32px] px-2.5 rounded-[6px] border border-[#E6E1D6] bg-[#FFFDF9] hover:bg-[#9E4737]/10 hover:border-[#9E4737]/40 text-[11px] font-medium text-[#7A756E] hover:text-[#9E4737] transition-colors whitespace-nowrap cursor-pointer"
+              >
+                封鎖
+              </button>
+            )}
           </div>
         </div>
 

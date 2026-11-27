@@ -6,6 +6,7 @@ import {DiaryWall} from './components/DiaryWall';
 import {MyNotebookTab} from './components/MyNotebookTab';
 import {PrivacyPolicyPage} from './components/PrivacyPolicyPage';
 import {PWAInstallButton} from './components/PWAInstallButton';
+import {SafetyModals} from './components/SafetyModals';
 import {UnlockBanner} from './components/UnlockBanner';
 import {WriteDiary} from './components/WriteDiary';
 import {DEFAULT_EMPTY_PROFILE} from './data/diaryConstants';
@@ -26,16 +27,19 @@ import {
 import {
   loadUserCache,
   purgeForeignUserCaches,
+  saveUserBlockedUsersCache,
   saveUserConnectionsCache,
   saveUserDiariesCache,
   saveUserProfileCache,
 } from './services/userStorage';
 import {
+  BlockedUserItem,
   DiaryEntry,
   IncomingGlimmer,
   MoodFilter,
   MoodTag,
   ReactionKey,
+  SafetyTarget,
   TabKey,
   UnlockedConnection,
   UserProfile,
@@ -102,11 +106,16 @@ export default function App() {
   const [authUserId, setAuthUserId] = useState<string | null>(null);
   const [authEmail, setAuthEmail] = useState<string | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [blockedUsers, setBlockedUsers] = useState<BlockedUserItem[]>([]);
+  const [reportTarget, setReportTarget] = useState<SafetyTarget | null>(null);
+  const [blockTarget, setBlockTarget] = useState<SafetyTarget | null>(null);
+  const [safetyNotice, setSafetyNotice] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [syncNotice, setSyncNotice] = useState<string | null>(null);
 
   const bannerTimerRef = useRef<number | null>(null);
+  const safetyTimerRef = useRef<number | null>(null);
   const activeAuthIdRef = useRef<string | null>(null);
   const myDiariesRef = useRef<DiaryEntry[]>(myDiaries);
   myDiariesRef.current = myDiaries;
@@ -118,6 +127,10 @@ export default function App() {
     if (bannerTimerRef.current) {
       window.clearTimeout(bannerTimerRef.current);
       bannerTimerRef.current = null;
+    }
+    if (safetyTimerRef.current) {
+      window.clearTimeout(safetyTimerRef.current);
+      safetyTimerRef.current = null;
     }
   }, []);
 
@@ -152,6 +165,9 @@ export default function App() {
       setBannerInfo(null);
       setHighlightedDiaryId(null);
       setActivePartnerId(null);
+      setReportTarget(null);
+      setBlockTarget(null);
+      setSafetyNotice(null);
       setSyncError(null);
       setSyncNotice(null);
 
@@ -161,6 +177,7 @@ export default function App() {
         setWallDiaries([]);
         setPendingGlimmers([]);
         setUnlockedConnections([]);
+        setBlockedUsers([]);
         return;
       }
 
@@ -190,6 +207,7 @@ export default function App() {
       setMyDiaries(cachedMyDiaries);
       setWallDiaries(cachedMyDiaries);
       setUnlockedConnections(cached.connections ?? []);
+      setBlockedUsers(cached.blockedUsers ?? []);
       setPendingGlimmers([]);
     },
     [clearPendingTimers],
@@ -808,6 +826,102 @@ export default function App() {
     setHighlightedDiaryId(null);
   }, []);
 
+  const showSafetyFeedback = useCallback((message: string) => {
+    setSafetyNotice(message);
+    if (safetyTimerRef.current) {
+      window.clearTimeout(safetyTimerRef.current);
+    }
+    safetyTimerRef.current = window.setTimeout(() => {
+      setSafetyNotice(null);
+    }, 5500);
+  }, []);
+
+  const handleRequestReport = (target: SafetyTarget) => {
+    if (!authUserId) {
+      showSafetyFeedback('請先登入帳號後再進行檢舉。');
+      setIsAuthModalOpen(true);
+      return;
+    }
+    setReportTarget(target);
+  };
+
+  const handleRequestBlock = (target: SafetyTarget) => {
+    if (!authUserId) {
+      showSafetyFeedback('請先登入帳號後再進行封鎖。');
+      setIsAuthModalOpen(true);
+      return;
+    }
+    setBlockTarget(target);
+  };
+
+  const handleSubmitReport = (reason: string, details: string) => {
+    if (reportTarget && supabase && authUserId) {
+      void supabase
+        .from('reports')
+        .insert({
+          reporter_id: authUserId,
+          reported_user_id: reportTarget.targetUserId,
+          diary_id: reportTarget.diaryId ?? null,
+          reason,
+          details: details || null,
+        })
+        .then(() => {
+          // Best-effort persistence if reports table exists
+        });
+    }
+    setReportTarget(null);
+    showSafetyFeedback('已收到您的檢舉，我們將儘快處理');
+  };
+
+  const handleConfirmBlock = () => {
+    if (!blockTarget) return;
+    const {targetUserId, targetName} = blockTarget;
+    const blockedAt = formatCurrentTime();
+    setBlockedUsers((prev) => {
+      const exists = prev.some((u) => u.userId === targetUserId);
+      const next = exists
+        ? prev
+        : [...prev, {userId: targetUserId, name: targetName || '匿名筆友', blockedAt}];
+      if (authUserId) {
+        saveUserBlockedUsersCache(authUserId, next);
+      }
+      return next;
+    });
+    if (activePartnerId === targetUserId) {
+      setActivePartnerId(null);
+    }
+    if (bannerInfo?.partnerId === targetUserId) {
+      setBannerInfo(null);
+    }
+    setBlockTarget(null);
+    showSafetyFeedback(`已封鎖「${targetName}」，已隱藏其所有日記與對話。`);
+  };
+
+  const handleUnblockUser = (userId: string) => {
+    const target = blockedUsers.find((u) => u.userId === userId);
+    setBlockedUsers((prev) => {
+      const next = prev.filter((u) => u.userId !== userId);
+      if (authUserId) {
+        saveUserBlockedUsersCache(authUserId, next);
+      }
+      return next;
+    });
+    showSafetyFeedback(
+      `已將「${target?.name || '匿名筆友'}」移出封鎖名單，已恢復顯示其日記與對話。`,
+    );
+  };
+
+  const blockedSet = new Set(blockedUsers.map((u) => u.userId));
+  const visibleWallDiaries = wallDiaries.filter(
+    (d) => !blockedSet.has(d.authorId),
+  );
+  const visiblePendingGlimmers = pendingGlimmers.filter(
+    (g) => !blockedSet.has(g.fromAuthorId),
+  );
+  const visibleConnections = unlockedConnections.filter(
+    (c) => !blockedSet.has(c.partnerId),
+  );
+
   const navItems: {
     key: TabKey;
     label: string;
@@ -820,7 +934,7 @@ export default function App() {
       key: 'connections',
       label: '心意連結',
       icon: HeartHandshake,
-      badgeCount: pendingGlimmers.length,
+      badgeCount: visiblePendingGlimmers.length,
     },
     {key: 'notebook', label: '我的本子', icon: BookMarked},
   ];
@@ -842,6 +956,16 @@ export default function App() {
         onNavigateToPrivacy={() => navigateTo('/privacy')}
         onSignIn={handleSignIn}
         onSignUp={handleSignUp}
+      />
+
+      {/* Safety Report & Block Modals */}
+      <SafetyModals
+        reportTarget={reportTarget}
+        blockTarget={blockTarget}
+        onCloseReport={() => setReportTarget(null)}
+        onSubmitReport={handleSubmitReport}
+        onCloseBlock={() => setBlockTarget(null)}
+        onConfirmBlock={handleConfirmBlock}
       />
 
       {/* Mutual Unlock Notification Banner */}
@@ -905,17 +1029,35 @@ export default function App() {
           </div>
         )}
 
+        {/* Safety Report / Block / Login Prompt Notice */}
+        {safetyNotice && (
+          <div
+            role="status"
+            className="bg-[#5C6B54]/10 border-b border-[#5C6B54]/25 px-4 py-2.5 flex items-center justify-between gap-2 text-xs text-[#2C2A29]"
+          >
+            <span className="leading-relaxed">{safetyNotice}</span>
+            <button
+              type="button"
+              onClick={() => setSafetyNotice(null)}
+              aria-label="關閉提示"
+              className="min-w-[28px] min-h-[28px] flex items-center justify-center rounded hover:bg-[#5C6B54]/10 shrink-0 cursor-pointer"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+
         {/* Scrollable Main Content */}
         <main className="flex-1 px-4 pb-6">
           {activeTab === 'wall' && (
             <DiaryWall
-              diaries={wallDiaries}
+              diaries={visibleWallDiaries}
               currentUserId={authUserId}
               todayDateStr={todayDateStr}
               activeFilter={activeFilter}
               onSelectFilter={setActiveFilter}
-              pendingGlimmers={pendingGlimmers}
-              unlockedConnections={unlockedConnections}
+              pendingGlimmers={visiblePendingGlimmers}
+              unlockedConnections={visibleConnections}
               highlightedDiaryId={highlightedDiaryId}
               onClearHighlight={clearHighlight}
               onToggleReaction={handleToggleReaction}
@@ -928,6 +1070,8 @@ export default function App() {
                   setIsAuthModalOpen(true);
                 }
               }}
+              onReportAuthor={handleRequestReport}
+              onBlockAuthor={handleRequestBlock}
             />
           )}
 
@@ -944,12 +1088,14 @@ export default function App() {
 
           {activeTab === 'connections' && (
             <ConnectionsTab
-              pendingGlimmers={pendingGlimmers}
-              unlockedConnections={unlockedConnections}
+              pendingGlimmers={visiblePendingGlimmers}
+              unlockedConnections={visibleConnections}
               activePartnerId={activePartnerId}
               onSelectPartner={setActivePartnerId}
               onJumpToDiary={handleJumpToDiary}
               onSendMessage={handleSendMessage}
+              onReportPartner={handleRequestReport}
+              onBlockPartner={handleRequestBlock}
             />
           )}
 
@@ -958,12 +1104,14 @@ export default function App() {
               currentUserId={authUserId}
               profile={userProfile}
               myDiaries={myDiaries}
+              blockedUsers={blockedUsers}
               isSupabaseReady={isSupabaseConfigured}
               authEmail={authEmail}
               isSyncing={isSyncing}
               syncError={syncError}
               syncNotice={syncNotice}
               onUpdateProfile={handleUpdateProfile}
+              onUnblockUser={handleUnblockUser}
               onSignIn={handleSignIn}
               onSignUp={handleSignUp}
               onSignOut={handleSignOut}

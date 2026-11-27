@@ -1,4 +1,9 @@
-import {DiaryEntry, UnlockedConnection, UserProfile} from '../types/diary';
+import {
+  BlockedUserItem,
+  DiaryEntry,
+  UnlockedConnection,
+  UserProfile,
+} from '../types/diary';
 
 const PREFIX = 'paper_glimmer_';
 
@@ -10,6 +15,7 @@ export interface CachedUserData {
   profile: UserProfile | null;
   myDiaries: DiaryEntry[] | null;
   connections: UnlockedConnection[] | null;
+  blockedUsers: BlockedUserItem[] | null;
 }
 
 export function loadUserCache(userId: string): CachedUserData {
@@ -18,6 +24,7 @@ export function loadUserCache(userId: string): CachedUserData {
       profile: null,
       myDiaries: null,
       connections: null,
+      blockedUsers: null,
     };
   }
 
@@ -30,10 +37,22 @@ export function loadUserCache(userId: string): CachedUserData {
     }
   };
 
+  const rawBlocked = safeParse<Array<string | BlockedUserItem>>(
+    getKey('blocked', userId),
+  );
+  const blockedUsers: BlockedUserItem[] | null = rawBlocked
+    ? rawBlocked.map((item) =>
+        typeof item === 'string'
+          ? {userId: item, name: '匿名筆友'}
+          : item,
+      )
+    : null;
+
   return {
     profile: safeParse<UserProfile>(getKey('profile', userId)),
     myDiaries: safeParse<DiaryEntry[]>(getKey('diaries', userId)),
     connections: safeParse<UnlockedConnection[]>(getKey('connections', userId)),
+    blockedUsers,
   };
 }
 
@@ -71,6 +90,21 @@ export function saveUserConnectionsCache(
     window.localStorage.setItem(
       getKey('connections', userId),
       JSON.stringify(connections),
+    );
+  } catch {
+    // Ignore quota errors
+  }
+}
+
+export function saveUserBlockedUsersCache(
+  userId: string,
+  blockedUsers: BlockedUserItem[],
+): void {
+  if (typeof window === 'undefined' || !userId) return;
+  try {
+    window.localStorage.setItem(
+      getKey('blocked', userId),
+      JSON.stringify(blockedUsers),
     );
   } catch {
     // Ignore quota errors

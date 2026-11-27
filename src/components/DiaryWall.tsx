@@ -6,6 +6,7 @@ import {
   MoodFilter,
   MoodTag,
   ReactionKey,
+  SafetyTarget,
   UnlockedConnection,
 } from '../types/diary';
 import {DiaryCard} from './DiaryCard';
@@ -29,6 +30,8 @@ interface DiaryWallProps {
     mood: MoodTag;
   }) => void;
   onGoToWriteOrSignIn: () => void;
+  onReportAuthor: (target: SafetyTarget) => void;
+  onBlockAuthor: (target: SafetyTarget) => void;
 }
 
 export function DiaryWall({
@@ -45,6 +48,8 @@ export function DiaryWall({
   onOpenPartnerChat,
   onUpdateTodaysDiary,
   onGoToWriteOrSignIn,
+  onReportAuthor,
+  onBlockAuthor,
 }: DiaryWallProps) {
   const filteredDiaries =
     activeFilter === '全部'
@@ -147,6 +152,8 @@ export function DiaryWall({
                 onToggleReaction={onToggleReaction}
                 onOpenPartnerChat={onOpenPartnerChat}
                 onSaveInlineEdit={onUpdateTodaysDiary}
+                onReportAuthor={onReportAuthor}
+                onBlockAuthor={onBlockAuthor}
               />
             );
           })
