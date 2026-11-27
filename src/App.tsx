@@ -4,6 +4,7 @@ import {AuthModal, type AuthActionResult} from './components/AuthModal';
 import {ConnectionsTab} from './components/ConnectionsTab';
 import {DiaryWall} from './components/DiaryWall';
 import {MyNotebookTab} from './components/MyNotebookTab';
+import {PrivacyPolicyPage} from './components/PrivacyPolicyPage';
 import {PWAInstallButton} from './components/PWAInstallButton';
 import {UnlockBanner} from './components/UnlockBanner';
 import {WriteDiary} from './components/WriteDiary';
@@ -71,6 +72,9 @@ function isOwnedByActor(diary: DiaryEntry, actorId: string): boolean {
 }
 
 export default function App() {
+  const [currentPath, setCurrentPath] = useState<string>(() =>
+    typeof window !== 'undefined' ? window.location.pathname : '/',
+  );
   const [activeTab, setActiveTab] = useState<TabKey>('wall');
   const [activeFilter, setActiveFilter] = useState<MoodFilter>('全部');
 
@@ -115,6 +119,26 @@ export default function App() {
       window.clearTimeout(bannerTimerRef.current);
       bannerTimerRef.current = null;
     }
+  }, []);
+
+  const navigateTo = useCallback((path: string) => {
+    if (typeof window !== 'undefined' && window.location.pathname !== path) {
+      window.history.pushState({}, '', path);
+    }
+    setCurrentPath(path);
+    setIsAuthModalOpen(false);
+    if (typeof window !== 'undefined') {
+      window.scrollTo({top: 0, behavior: 'smooth'});
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handlePopState = () => {
+      setCurrentPath(window.location.pathname);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
   /**
@@ -801,6 +825,13 @@ export default function App() {
     {key: 'notebook', label: '我的本子', icon: BookMarked},
   ];
 
+  const isPrivacyRoute =
+    currentPath === '/privacy' || currentPath === '/privacy/';
+
+  if (isPrivacyRoute) {
+    return <PrivacyPolicyPage onBackHome={() => navigateTo('/')} />;
+  }
+
   return (
     <div className="min-h-screen bg-[#F2EFE8]">
       {/* Auth Modal (Sign In / Sign Up) */}
@@ -808,6 +839,7 @@ export default function App() {
         isOpen={isAuthModalOpen}
         isSupabaseReady={isSupabaseConfigured}
         onClose={() => setIsAuthModalOpen(false)}
+        onNavigateToPrivacy={() => navigateTo('/privacy')}
         onSignIn={handleSignIn}
         onSignUp={handleSignUp}
       />
@@ -874,7 +906,7 @@ export default function App() {
         )}
 
         {/* Scrollable Main Content */}
-        <main className="flex-1 px-4 pb-24">
+        <main className="flex-1 px-4 pb-6">
           {activeTab === 'wall' && (
             <DiaryWall
               diaries={wallDiaries}
@@ -939,6 +971,24 @@ export default function App() {
             />
           )}
         </main>
+
+        {/* Home Footer with Public Privacy Policy Link */}
+        <footer className="px-4 pt-3 pb-24 text-center border-t border-[#E6E1D6]/60">
+          <div className="flex items-center justify-center gap-3 text-[11px] text-[#7A756E]">
+            <span>紙間微光 Paper Glimmer</span>
+            <span aria-hidden="true">·</span>
+            <a
+              href="/privacy"
+              onClick={(e) => {
+                e.preventDefault();
+                navigateTo('/privacy');
+              }}
+              className="text-[#5C6B54] hover:text-[#2C2A29] underline underline-offset-2 font-medium transition-colors"
+            >
+              隱私權政策
+            </a>
+          </div>
+        </footer>
 
         {/* Fixed Bottom 4-Tab Navigation Bar */}
         <nav

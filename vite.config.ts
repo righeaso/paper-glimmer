@@ -4,7 +4,6 @@ import fs from 'fs';
 import path from 'path';
 import {fileURLToPath} from 'url';
 import {defineConfig} from 'vite';
-import {VitePWA} from 'vite-plugin-pwa';
 
 const rootDir = path.dirname(fileURLToPath(import.meta.url));
 
@@ -14,56 +13,6 @@ export default defineConfig(() => {
     plugins: [
       react(),
       tailwindcss(),
-      VitePWA({
-        registerType: 'autoUpdate',
-        manifest: false,
-        includeAssets: [
-          'manifest.webmanifest',
-          'apple-touch-icon.png',
-          'icon.svg',
-          'icon-192.png',
-          'icon-512.png',
-          'icon-maskable-512.png',
-        ],
-        workbox: {
-          globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2,webmanifest}'],
-          navigateFallbackDenylist: [/^\/api/, /^\/rest/, /^\/auth/],
-          runtimeCaching: [
-            {
-              urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-              handler: 'CacheFirst',
-              options: {
-                cacheName: 'google-fonts-cache',
-                expiration: {
-                  maxEntries: 10,
-                  maxAgeSeconds: 60 * 60 * 24 * 365,
-                },
-                cacheableResponse: {
-                  statuses: [0, 200],
-                },
-              },
-            },
-            {
-              urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
-              handler: 'CacheFirst',
-              options: {
-                cacheName: 'gstatic-fonts-cache',
-                expiration: {
-                  maxEntries: 10,
-                  maxAgeSeconds: 60 * 60 * 24 * 365,
-                },
-                cacheableResponse: {
-                  statuses: [0, 200],
-                },
-              },
-            },
-          ],
-        },
-        devOptions: {
-          enabled: true,
-          type: 'module',
-        },
-      }),
       // Copies src/assets into dist/ so root-relative URLs like
       // "/src/assets/images/..." (e.g. generate_image output) still resolve
       // in production builds. Do not remove.

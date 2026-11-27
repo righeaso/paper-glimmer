@@ -12,6 +12,7 @@ interface AuthModalProps {
   isSupabaseReady: boolean;
   initialMode?: 'signin' | 'signup';
   onClose: () => void;
+  onNavigateToPrivacy?: () => void;
   onSignIn: (email: string, password: string) => Promise<AuthActionResult>;
   onSignUp: (
     email: string,
@@ -25,6 +26,7 @@ export function AuthModal({
   isSupabaseReady,
   initialMode = 'signin',
   onClose,
+  onNavigateToPrivacy,
   onSignIn,
   onSignUp,
 }: AuthModalProps) {
@@ -305,6 +307,25 @@ export function AuthModal({
                 : '註冊並啟用帳號'}
           </button>
         </form>
+
+        <div className="pt-3 border-t border-[#E6E1D6]/70 text-center">
+          <p className="text-[11px] text-[#7A756E]">
+            登入或註冊即代表你同意我們的{' '}
+            <a
+              href="/privacy"
+              onClick={(e) => {
+                if (onNavigateToPrivacy) {
+                  e.preventDefault();
+                  onClose();
+                  onNavigateToPrivacy();
+                }
+              }}
+              className="text-[#5C6B54] hover:text-[#2C2A29] underline underline-offset-2 font-medium"
+            >
+              隱私權政策
+            </a>
+          </p>
+        </div>
       </div>
     </div>
   );
