@@ -42,3 +42,9 @@ export const DEFAULT_EMPTY_PROFILE: UserProfile = {
   bio: '',
   writingDays: 0,
 };
+
+/**
+ * GitHub Release APK 下載網址（支援環境變數 VITE_ANDROID_APK_URL 或直接填入固定網址）
+ */
+export const ANDROID_APK_DOWNLOAD_URL: string =
+  (import.meta.env.VITE_ANDROID_APK_URL || '').trim();

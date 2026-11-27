@@ -1,6 +1,7 @@
 import {FormEvent, useEffect, useState} from 'react';
 import {AlertCircle, CheckCircle2, Cloud, X} from 'lucide-react';
 import {getSupabaseEnvDiagnostic} from '../lib/supabase';
+import {AndroidApkDownloadButton} from './AndroidApkDownloadButton';
 
 export interface AuthActionResult {
   error: string | null;
@@ -308,7 +309,8 @@ export function AuthModal({
           </button>
         </form>
 
-        <div className="pt-3 border-t border-[#E6E1D6]/70 text-center">
+        <div className="pt-3 border-t border-[#E6E1D6]/70 space-y-2.5 text-center">
+          <AndroidApkDownloadButton variant="modal" />
           <p className="text-[11px] text-[#7A756E]">
             登入或註冊即代表你同意我們的{' '}
             <a

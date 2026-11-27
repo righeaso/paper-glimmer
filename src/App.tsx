@@ -1,5 +1,6 @@
 import {useCallback, useEffect, useRef, useState} from 'react';
 import {BookOpen, BookMarked, HeartHandshake, PenLine, X} from 'lucide-react';
+import {AndroidApkDownloadButton} from './components/AndroidApkDownloadButton';
 import {AuthModal, type AuthActionResult} from './components/AuthModal';
 import {ConnectionsTab} from './components/ConnectionsTab';
 import {DiaryWall} from './components/DiaryWall';
@@ -1120,8 +1121,9 @@ export default function App() {
           )}
         </main>
 
-        {/* Home Footer with Public Privacy Policy Link */}
-        <footer className="px-4 pt-3 pb-24 text-center border-t border-[#E6E1D6]/60">
+        {/* Home Footer with Android APK Download & Public Privacy Policy Link */}
+        <footer className="px-4 pt-4 pb-24 text-center border-t border-[#E6E1D6]/60 space-y-3">
+          <AndroidApkDownloadButton variant="footer" />
           <div className="flex items-center justify-center gap-3 text-[11px] text-[#7A756E]">
             <span>紙間微光 Paper Glimmer</span>
             <span aria-hidden="true">·</span>
