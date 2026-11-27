@@ -52,17 +52,17 @@ alter table public.diaries enable row level security;
 alter table public.reactions enable row level security;
 alter table public.messages enable row level security;
 
--- Profiles 權限：已登入使用者可讀取筆名、僅可寫入自己的資料
-create policy "profiles_select_authenticated" on public.profiles
-  for select to authenticated using (true);
+-- Profiles 權限：公開可讀取筆名（支援未登入瀏覽日記牆）、僅已登入使用者可寫入自己的資料
+create policy "profiles_select_public" on public.profiles
+  for select to anon, authenticated using (true);
 create policy "profiles_insert_own" on public.profiles
   for insert to authenticated with check (auth.uid() = id);
 create policy "profiles_update_own" on public.profiles
   for update to authenticated using (auth.uid() = id);
 
--- Diaries 權限：已登入使用者可讀日記牆、僅可新增與修改自己的日記
-create policy "diaries_select_authenticated" on public.diaries
-  for select to authenticated using (true);
+-- Diaries 權限：公開可讀日記牆（支援未登入瀏覽）、僅已登入使用者可新增與修改自己的日記
+create policy "diaries_select_public" on public.diaries
+  for select to anon, authenticated using (true);
 create policy "diaries_insert_own" on public.diaries
   for insert to authenticated
   with check (auth.uid() = author_id and auth.uid() = user_id);

@@ -19,6 +19,7 @@ import {
 } from './lib/supabase';
 import {
   computeWritingDaysFromDiaries,
+  loadPublicDiariesFromSupabase,
   loadUserSnapshotFromSupabase,
   syncMessageToSupabase,
   syncProfileToSupabase,
@@ -112,6 +113,7 @@ export default function App() {
   const [reportTarget, setReportTarget] = useState<SafetyTarget | null>(null);
   const [blockTarget, setBlockTarget] = useState<SafetyTarget | null>(null);
   const [safetyNotice, setSafetyNotice] = useState<string | null>(null);
+  const [isPublicWallLoading, setIsPublicWallLoading] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [syncNotice, setSyncNotice] = useState<string | null>(null);
@@ -367,6 +369,20 @@ export default function App() {
     [],
   );
 
+  const loadPublicWall = useCallback(async () => {
+    setIsPublicWallLoading(true);
+    const {diaries, error} = await loadPublicDiariesFromSupabase();
+    if (activeAuthIdRef.current !== null) {
+      setIsPublicWallLoading(false);
+      return;
+    }
+    setIsPublicWallLoading(false);
+    setWallDiaries(diaries);
+    if (error) {
+      setSyncError(`公開日記牆載入失敗：${error}`);
+    }
+  }, []);
+
   useEffect(() => {
     if (!supabase) return;
 
@@ -387,6 +403,8 @@ export default function App() {
 
       if (nextId) {
         void syncFromCloud(nextId, metaNickname, false, nextEmail);
+      } else {
+        void loadPublicWall();
       }
     });
 
@@ -411,6 +429,8 @@ export default function App() {
         if (nextId) {
           setIsAuthModalOpen(false);
           void syncFromCloud(nextId, metaNickname, false, nextEmail);
+        } else {
+          void loadPublicWall();
         }
       }
     });
@@ -419,7 +439,7 @@ export default function App() {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [resetStateForAccount, syncFromCloud]);
+  }, [loadPublicWall, resetStateForAccount, syncFromCloud]);
 
   useEffect(() => {
     return () => {
@@ -455,7 +475,8 @@ export default function App() {
     reaction: ReactionKey,
   ) => {
     if (!authUserId) {
-      setActiveTab('notebook');
+      showSafetyFeedback('登入帳號後，即可對這篇日記送出微光回應。');
+      setIsAuthModalOpen(true);
       return;
     }
 
@@ -559,7 +580,8 @@ export default function App() {
     mood: MoodTag;
   }) => {
     if (!authUserId) {
-      setActiveTab('notebook');
+      showSafetyFeedback('登入帳號後，即可寫下並發布今日日記。');
+      setIsAuthModalOpen(true);
       return;
     }
 
@@ -670,6 +692,11 @@ export default function App() {
   };
 
   const handleOpenPartnerChat = (partnerId: string) => {
+    if (!authUserId) {
+      showSafetyFeedback('登入帳號後，即可開啟一對一聊天。');
+      setIsAuthModalOpen(true);
+      return;
+    }
     setActiveTab('connections');
     setActivePartnerId(partnerId);
     setBannerInfo(null);
@@ -814,8 +841,12 @@ export default function App() {
     setAuthUserId(null);
     setAuthEmail(null);
     resetStateForAccount(null);
+    if (activeTab === 'write' || activeTab === 'connections') {
+      setActiveTab('wall');
+    }
     if (supabase) {
       await supabase.auth.signOut();
+      void loadPublicWall();
     }
   };
 
@@ -1055,6 +1086,7 @@ export default function App() {
             <DiaryWall
               diaries={visibleWallDiaries}
               currentUserId={authUserId}
+              isLoading={isPublicWallLoading}
               todayDateStr={todayDateStr}
               activeFilter={activeFilter}
               onSelectFilter={setActiveFilter}
@@ -1072,6 +1104,7 @@ export default function App() {
                   setIsAuthModalOpen(true);
                 }
               }}
+              onOpenSignIn={() => setIsAuthModalOpen(true)}
               onReportAuthor={handleRequestReport}
               onBlockAuthor={handleRequestBlock}
             />
@@ -1157,6 +1190,18 @@ export default function App() {
                 key={item.key}
                 type="button"
                 onClick={() => {
+                  if (
+                    !authUserId &&
+                    (item.key === 'write' || item.key === 'connections')
+                  ) {
+                    showSafetyFeedback(
+                      item.key === 'write'
+                        ? '登入帳號後，即可寫下今日日記。'
+                        : '登入帳號後，即可使用心意連結與一對一聊天。',
+                    );
+                    setIsAuthModalOpen(true);
+                    return;
+                  }
                   setActiveTab(item.key);
                   if (item.key !== 'connections') {
                     setActivePartnerId(null);

@@ -14,6 +14,7 @@ import {DiaryCard} from './DiaryCard';
 interface DiaryWallProps {
   diaries: DiaryEntry[];
   currentUserId: string | null;
+  isLoading?: boolean;
   todayDateStr: string;
   activeFilter: MoodFilter;
   onSelectFilter: (filter: MoodFilter) => void;
@@ -30,6 +31,7 @@ interface DiaryWallProps {
     mood: MoodTag;
   }) => void;
   onGoToWriteOrSignIn: () => void;
+  onOpenSignIn: () => void;
   onReportAuthor: (target: SafetyTarget) => void;
   onBlockAuthor: (target: SafetyTarget) => void;
 }
@@ -37,6 +39,7 @@ interface DiaryWallProps {
 export function DiaryWall({
   diaries,
   currentUserId,
+  isLoading = false,
   todayDateStr,
   activeFilter,
   onSelectFilter,
@@ -48,6 +51,7 @@ export function DiaryWall({
   onOpenPartnerChat,
   onUpdateTodaysDiary,
   onGoToWriteOrSignIn,
+  onOpenSignIn,
   onReportAuthor,
   onBlockAuthor,
 }: DiaryWallProps) {
@@ -106,24 +110,47 @@ export function DiaryWall({
         </div>
       </div>
 
+      {/* Subtle Guest Browsing Banner (Unauthenticated only) */}
+      {!currentUserId && (
+        <div
+          role="status"
+          className="mt-3 bg-[#FFFDF9] border border-[#E6E1D6] rounded-[10px] px-3.5 py-2.5 flex items-center justify-between gap-2.5 shadow-[0_1px_4px_rgba(44,42,41,0.02)]"
+        >
+          <p className="text-xs text-[#7A756E] leading-relaxed">
+            目前為訪客瀏覽模式，登入後即可寫下日記或送出微光回應
+          </p>
+          <button
+            type="button"
+            onClick={onOpenSignIn}
+            className="min-h-[34px] px-2.5 rounded-[7px] bg-[#5C6B54]/10 hover:bg-[#5C6B54]/20 text-xs font-medium text-[#5C6B54] hover:text-[#2C2A29] transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+          >
+            立即登入 →
+          </button>
+        </div>
+      )}
+
       {/* Diary Cards Feed */}
       <div className="mt-4 space-y-4">
-        {filteredDiaries.length === 0 ? (
+        {isLoading && filteredDiaries.length === 0 ? (
+          <div className="bg-[#FFFDF9] border border-[#E6E1D6] rounded-[12px] p-8 text-center">
+            <p className="font-serif text-[14px] text-[#7A756E]">
+              正在載入公開日記牆…
+            </p>
+          </div>
+        ) : filteredDiaries.length === 0 ? (
           <div className="bg-[#FFFDF9] border border-[#E6E1D6] rounded-[12px] p-8 text-center space-y-4">
             <p className="font-serif text-[15px] text-[#7A756E] leading-relaxed">
-              {!currentUserId
-                ? '登入雲端帳號後，即可閱讀日記牆並分享今天的心情。'
-                : activeFilter === '全部'
-                  ? '今天還沒有人留下微光，成為第一個寫下心情的人吧'
-                  : `目前還沒有「${activeFilter}」心情的日記，換個分類看看吧。`}
+              {activeFilter === '全部'
+                ? '今天還沒有人留下微光，成為第一個寫下心情的人吧'
+                : `目前還沒有「${activeFilter}」心情的日記，換個分類看看吧。`}
             </p>
-            {(activeFilter === '全部' || !currentUserId) && (
+            {activeFilter === '全部' && (
               <button
                 type="button"
                 onClick={onGoToWriteOrSignIn}
                 className="min-h-[40px] px-4 rounded-[8px] border border-[#E6E1D6] bg-[#F9F7F2] hover:bg-[#F2ECE0] text-xs font-medium text-[#2C2A29] transition-colors cursor-pointer"
               >
-                {currentUserId ? '去寫今日日記' : '前往登入或註冊'}
+                去寫今日日記
               </button>
             )}
           </div>

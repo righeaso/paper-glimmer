@@ -149,6 +149,77 @@ export interface SyncedSnapshot {
   connections: UnlockedConnection[];
 }
 
+export async function loadPublicDiariesFromSupabase(): Promise<{
+  diaries: DiaryEntry[];
+  error: string | null;
+}> {
+  if (!supabase) {
+    return {diaries: [], error: null};
+  }
+
+  try {
+    const {data: diaryRows, error: diaryErr} = await supabase
+      .from('diaries')
+      .select('*')
+      .order('created_at', {ascending: false});
+
+    if (diaryErr) {
+      return {diaries: [], error: formatPgError(diaryErr)};
+    }
+
+    // Best-effort profile nickname lookup; gracefully fall back to author_name if anon profiles read is restricted
+    const nameById = new Map<string, string>();
+    const {data: allProfiles, error: profileErr} = await supabase
+      .from('profiles')
+      .select('id, nickname');
+
+    if (!profileErr && Array.isArray(allProfiles)) {
+      (allProfiles as RawProfileRow[]).forEach((p) => {
+        const key = p.id || p.user_id;
+        const nick = extractNickname(p);
+        if (key && nick) {
+          nameById.set(key, nick);
+        }
+      });
+    }
+
+    const mappedDiaries: DiaryEntry[] = (
+      (diaryRows as RawDiaryRow[] | null) ?? []
+    ).map((row) => {
+      const authorId = row.author_id || row.user_id || '';
+      const dateStr =
+        row.published_date ||
+        row.entry_date ||
+        (row.created_at ? row.created_at.slice(0, 10) : undefined);
+
+      return {
+        id: row.id,
+        authorId,
+        userId: row.user_id || row.author_id,
+        authorName: nameById.get(authorId) || row.author_name || '匿名筆友',
+        createdAt: formatDisplayTime(row.created_at),
+        publishedDate: dateStr,
+        entryDate: dateStr,
+        updatedAt: row.updated_at ? formatDisplayTime(row.updated_at) : undefined,
+        isEdited: Boolean(row.is_edited),
+        mood: normalizeMood(row.mood),
+        title: row.title || '無題日記',
+        content: row.content || '',
+        isMine: false,
+        myReaction: null,
+        receivedReactions: [],
+      };
+    });
+
+    return {diaries: mappedDiaries, error: null};
+  } catch (err) {
+    return {
+      diaries: [],
+      error: err instanceof Error ? err.message : '無法讀取公開日記牆',
+    };
+  }
+}
+
 export async function loadUserSnapshotFromSupabase(
   userId: string,
   fallbackProfile: UserProfile,
