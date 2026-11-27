@@ -44,7 +44,7 @@ export const DEFAULT_EMPTY_PROFILE: UserProfile = {
 };
 
 /**
- * GitHub Release APK 下載網址（支援環境變數 VITE_ANDROID_APK_URL 或直接填入固定網址）
+ * GitHub Release APK 下載網址
  */
-export const ANDROID_APK_DOWNLOAD_URL: string =
-  (import.meta.env.VITE_ANDROID_APK_URL || '').trim();
+export const ANDROID_APK_DOWNLOAD_URL =
+  'https://github.com/righeaso/paper-glimmer/releases/download/v1.0.0/default.apk';
