@@ -6,8 +6,8 @@ interface PrivacyPolicyPageProps {
 
 export function PrivacyPolicyPage({onBackHome}: PrivacyPolicyPageProps) {
   return (
-    <div className="min-h-screen bg-[#F2EFE8]">
-      <div className="max-w-[480px] mx-auto min-h-screen bg-[#F9F7F2] sm:border-x sm:border-[#E6E1D6] sm:shadow-[0_0_40px_rgba(44,42,41,0.04)] flex flex-col">
+    <div className="min-h-screen desktop-backdrop">
+      <div className="max-w-[480px] mx-auto min-h-screen bg-[#F9F7F2] sm:border-x sm:border-[#E6E1D6] sm:shadow-[0_12px_48px_rgba(44,42,41,0.16)] flex flex-col">
         {/* Sticky Top Header */}
         <header className="sticky top-0 z-30 h-[56px] bg-[#F9F7F2]/95 backdrop-blur-sm border-b border-[#E6E1D6] px-4 flex items-center justify-between gap-3">
           <div className="flex items-baseline gap-2 min-w-0">

@@ -13,6 +13,25 @@
   }
 }
 
+.desktop-backdrop {
+  background-color: #F2EFE8;
+}
+
+@media (min-width: 640px) {
+  body,
+  .desktop-backdrop {
+    background-color: #E9E2D4;
+    background-image:
+      url('/desktop-bg.jpg'),
+      radial-gradient(circle at 20% 20%, rgba(246, 232, 206, 0.9), transparent 55%),
+      linear-gradient(135deg, #EAE2D3 0%, #DFD4C0 100%);
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+  }
+}
+
 /* 仿信紙細線紋理 */
 .stationery-lines {
   background-image: repeating-linear-gradient(
