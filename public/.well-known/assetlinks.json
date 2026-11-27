@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "app.vercel.paper_glimmer.twa",
+        "sha256_cert_fingerprints": ["69:AA:B6:50:FE:1E:39:EC:D1:F5:42:34:10:35:C0:50:2F:F5:40:43:11:DC:A0:76:84:F0:1E:99:B3:AD:14:DE"]
+      }
+    }]
