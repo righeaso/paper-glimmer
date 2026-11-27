@@ -20,6 +20,7 @@ import {
 import type {AuthActionResult} from './AuthModal';
 import {AndroidApkDownloadButton} from './AndroidApkDownloadButton';
 import {DiaryCard} from './DiaryCard';
+import {IOSPwaGuide} from './IOSPwaGuide';
 import {PWAInstallButton} from './PWAInstallButton';
 
 interface MyNotebookTabProps {
@@ -506,8 +507,11 @@ export function MyNotebookTab({
         </div>
       </div>
 
-      {/* Android APK Download Card */}
-      <AndroidApkDownloadButton variant="card" />
+      {/* Android APK Download & iPhone PWA Guide */}
+      <div className="space-y-4">
+        <AndroidApkDownloadButton variant="card" />
+        <IOSPwaGuide variant="card" />
+      </div>
 
       {/* Blocked Users Management Card (Always visible) */}
       <div className="bg-[#FFFDF9] border border-[#E6E1D6] rounded-[12px] p-5 shadow-[0_2px_12px_rgba(44,42,41,0.03)] space-y-3">

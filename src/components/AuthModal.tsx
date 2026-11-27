@@ -2,6 +2,7 @@ import {FormEvent, useEffect, useState} from 'react';
 import {AlertCircle, CheckCircle2, Cloud, X} from 'lucide-react';
 import {getSupabaseEnvDiagnostic} from '../lib/supabase';
 import {AndroidApkDownloadButton} from './AndroidApkDownloadButton';
+import {IOSPwaGuide} from './IOSPwaGuide';
 
 export interface AuthActionResult {
   error: string | null;
@@ -121,7 +122,7 @@ export function AuthModal({
         }
       }}
     >
-      <div className="w-full max-w-[400px] bg-[#FFFDF9] border border-[#E6E1D6] rounded-[12px] shadow-[0_14px_36px_rgba(44,42,41,0.18)] p-5 space-y-4">
+      <div className="w-full max-w-[400px] max-h-[90vh] overflow-y-auto bg-[#FFFDF9] border border-[#E6E1D6] rounded-[12px] shadow-[0_14px_36px_rgba(44,42,41,0.18)] p-5 space-y-4">
         {/* Header */}
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-2">
@@ -311,6 +312,7 @@ export function AuthModal({
 
         <div className="pt-3 border-t border-[#E6E1D6]/70 space-y-2.5 text-center">
           <AndroidApkDownloadButton variant="modal" />
+          <IOSPwaGuide variant="modal" />
           <p className="text-[11px] text-[#7A756E]">
             登入或註冊即代表你同意我們的{' '}
             <a
