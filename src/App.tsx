@@ -1,5 +1,5 @@
 import {useCallback, useEffect, useRef, useState} from 'react';
-import {BookOpen, BookMarked, HeartHandshake, PenLine, X} from 'lucide-react';
+import {BookMarked, HeartHandshake, PenLine, Sparkles, X} from 'lucide-react';
 import {AndroidApkDownloadButton} from './components/AndroidApkDownloadButton';
 import {IOSPwaGuide} from './components/IOSPwaGuide';
 import {AuthModal, type AuthActionResult} from './components/AuthModal';
@@ -958,10 +958,10 @@ export default function App() {
   const navItems: {
     key: TabKey;
     label: string;
-    icon: typeof BookOpen;
+    icon: typeof Sparkles;
     badgeCount?: number;
   }[] = [
-    {key: 'wall', label: '日記牆', icon: BookOpen},
+    {key: 'wall', label: '日記牆', icon: Sparkles},
     {key: 'write', label: '寫日記', icon: PenLine},
     {
       key: 'connections',
@@ -1016,13 +1016,20 @@ export default function App() {
       <div className="max-w-[480px] mx-auto min-h-screen bg-[#F9F7F2] sm:border-x sm:border-[#E6E1D6] sm:shadow-[0_12px_48px_rgba(44,42,41,0.16)] flex flex-col">
         {/* Sticky Top Header */}
         <header className="sticky top-0 z-30 h-[56px] bg-[#F9F7F2]/95 backdrop-blur-sm border-b border-[#E6E1D6] px-4 flex items-center justify-between">
-          <div className="flex items-baseline gap-2">
-            <h1 className="font-serif text-[18px] font-semibold text-[#2C2A29] tracking-wide whitespace-nowrap">
-              紙間微光
-            </h1>
-            <span className="text-[11px] text-[#7A756E] tracking-wider whitespace-nowrap">
-              Paper Glimmer
-            </span>
+          <div className="flex items-center gap-2.5">
+            <img
+              src="/icon.png?v=2"
+              alt="紙間微光"
+              className="w-8 h-8 rounded-lg object-cover shrink-0"
+            />
+            <div className="flex items-baseline gap-2">
+              <h1 className="font-serif text-[18px] font-semibold text-[#2C2A29] tracking-wide whitespace-nowrap">
+                紙間微光
+              </h1>
+              <span className="text-[11px] text-[#7A756E] tracking-wider whitespace-nowrap">
+                Paper Glimmer
+              </span>
+            </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <PWAInstallButton variant="compact" />

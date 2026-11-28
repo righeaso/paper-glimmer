@@ -1,14 +1,10 @@
-const CACHE_NAME = 'paper-glimmer-static-v2';
+const CACHE_NAME = 'paper-glimmer-static-v3';
 
 const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/manifest.webmanifest',
-  '/icon-192.png',
-  '/icon-512.png',
-  '/icon-maskable-512.png',
-  '/apple-touch-icon.png',
-  '/icon.svg',
+  '/icon.png?v=2',
 ];
 
 function shouldBypassCache(request) {

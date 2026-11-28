@@ -10,13 +10,20 @@ export function PrivacyPolicyPage({onBackHome}: PrivacyPolicyPageProps) {
       <div className="max-w-[480px] mx-auto min-h-screen bg-[#F9F7F2] sm:border-x sm:border-[#E6E1D6] sm:shadow-[0_12px_48px_rgba(44,42,41,0.16)] flex flex-col">
         {/* Sticky Top Header */}
         <header className="sticky top-0 z-30 h-[56px] bg-[#F9F7F2]/95 backdrop-blur-sm border-b border-[#E6E1D6] px-4 flex items-center justify-between gap-3">
-          <div className="flex items-baseline gap-2 min-w-0">
-            <h1 className="font-serif text-[18px] font-semibold text-[#2C2A29] tracking-wide whitespace-nowrap">
-              紙間微光
-            </h1>
-            <span className="text-[11px] text-[#7A756E] tracking-wider whitespace-nowrap">
-              隱私權政策
-            </span>
+          <div className="flex items-center gap-2.5 min-w-0">
+            <img
+              src="/icon.png?v=2"
+              alt="紙間微光"
+              className="w-8 h-8 rounded-lg object-cover shrink-0"
+            />
+            <div className="flex items-baseline gap-2 min-w-0">
+              <h1 className="font-serif text-[18px] font-semibold text-[#2C2A29] tracking-wide whitespace-nowrap">
+                紙間微光
+              </h1>
+              <span className="text-[11px] text-[#7A756E] tracking-wider whitespace-nowrap">
+                隱私權政策
+              </span>
+            </div>
           </div>
           <a
             href="/"
