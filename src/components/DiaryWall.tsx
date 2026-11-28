@@ -1,4 +1,5 @@
 import {useEffect} from 'react';
+import {Sparkles} from 'lucide-react';
 import {MOOD_FILTERS} from '../data/diaryConstants';
 import {
   DiaryEntry,
@@ -10,6 +11,8 @@ import {
   UnlockedConnection,
 } from '../types/diary';
 import {DiaryCard} from './DiaryCard';
+
+const GUEST_DIARY_LIMIT = 3;
 
 interface DiaryWallProps {
   diaries: DiaryEntry[];
@@ -55,10 +58,17 @@ export function DiaryWall({
   onReportAuthor,
   onBlockAuthor,
 }: DiaryWallProps) {
+  const isGuest = !currentUserId;
   const filteredDiaries =
     activeFilter === '全部'
       ? diaries
       : diaries.filter((diary) => diary.mood === activeFilter);
+  const displayedDiaries = isGuest
+    ? filteredDiaries.slice(0, GUEST_DIARY_LIMIT)
+    : filteredDiaries;
+  const hiddenCount = isGuest
+    ? Math.max(0, filteredDiaries.length - displayedDiaries.length)
+    : 0;
 
   useEffect(() => {
     if (!highlightedDiaryId) return;
@@ -111,7 +121,7 @@ export function DiaryWall({
       </div>
 
       {/* Subtle Guest Browsing Banner (Unauthenticated only) */}
-      {!currentUserId && (
+      {isGuest && (
         <div
           role="status"
           className="mt-3 bg-[#FFFDF9] border border-[#E6E1D6] rounded-[10px] px-3.5 py-2.5 flex items-center justify-between gap-2.5 shadow-[0_1px_4px_rgba(44,42,41,0.02)]"
@@ -131,13 +141,13 @@ export function DiaryWall({
 
       {/* Diary Cards Feed */}
       <div className="mt-4 space-y-4">
-        {isLoading && filteredDiaries.length === 0 ? (
+        {isLoading && displayedDiaries.length === 0 ? (
           <div className="bg-[#FFFDF9] border border-[#E6E1D6] rounded-[12px] p-8 text-center">
             <p className="font-serif text-[14px] text-[#7A756E]">
               正在載入公開日記牆…
             </p>
           </div>
-        ) : filteredDiaries.length === 0 ? (
+        ) : displayedDiaries.length === 0 ? (
           <div className="bg-[#FFFDF9] border border-[#E6E1D6] rounded-[12px] p-8 text-center space-y-4">
             <p className="font-serif text-[15px] text-[#7A756E] leading-relaxed">
               {activeFilter === '全部'
@@ -155,35 +165,63 @@ export function DiaryWall({
             )}
           </div>
         ) : (
-          filteredDiaries.map((diary) => {
-            const isOwnedByCurrentUser = Boolean(
-              currentUserId &&
-                (diary.authorId === currentUserId ||
-                  diary.userId === currentUserId),
-            );
-            const isPublishedToday =
-              (diary.publishedDate || diary.entryDate) === todayDateStr;
-            const canInlineEdit = Boolean(
-              isOwnedByCurrentUser && isPublishedToday,
-            );
+          <>
+            {displayedDiaries.map((diary) => {
+              const isOwnedByCurrentUser = Boolean(
+                currentUserId &&
+                  (diary.authorId === currentUserId ||
+                    diary.userId === currentUserId),
+              );
+              const isPublishedToday =
+                (diary.publishedDate || diary.entryDate) === todayDateStr;
+              const canInlineEdit = Boolean(
+                isOwnedByCurrentUser && isPublishedToday,
+              );
 
-            return (
-              <DiaryCard
-                key={`${currentUserId ?? 'anon'}-${diary.id}`}
-                diary={diary}
-                currentUserId={currentUserId ?? undefined}
-                hasPendingIncomingGlimmer={pendingAuthorIds.has(diary.authorId)}
-                isUnlockedPartner={unlockedPartnerIds.has(diary.authorId)}
-                isHighlighted={highlightedDiaryId === diary.id}
-                canInlineEdit={canInlineEdit}
-                onToggleReaction={onToggleReaction}
-                onOpenPartnerChat={onOpenPartnerChat}
-                onSaveInlineEdit={onUpdateTodaysDiary}
-                onReportAuthor={onReportAuthor}
-                onBlockAuthor={onBlockAuthor}
-              />
-            );
-          })
+              return (
+                <DiaryCard
+                  key={`${currentUserId ?? 'anon'}-${diary.id}`}
+                  diary={diary}
+                  currentUserId={currentUserId ?? undefined}
+                  hasPendingIncomingGlimmer={pendingAuthorIds.has(diary.authorId)}
+                  isUnlockedPartner={unlockedPartnerIds.has(diary.authorId)}
+                  isHighlighted={highlightedDiaryId === diary.id}
+                  canInlineEdit={canInlineEdit}
+                  onToggleReaction={onToggleReaction}
+                  onOpenPartnerChat={onOpenPartnerChat}
+                  onSaveInlineEdit={onUpdateTodaysDiary}
+                  onReportAuthor={onReportAuthor}
+                  onBlockAuthor={onBlockAuthor}
+                />
+              );
+            })}
+
+            {/* Guest Limit Unlock Prompt Card (shown below the 3rd diary card when logged out) */}
+            {isGuest && (
+              <div className="bg-[#FFFDF9] border border-[#E6E1D6] rounded-[12px] p-6 shadow-[0_2px_12px_rgba(44,42,41,0.03)] text-center space-y-4">
+                <div className="w-10 h-10 rounded-full bg-[#F3EFE6] text-[#5C6B54] flex items-center justify-center mx-auto">
+                  <Sparkles className="w-4 h-4" />
+                </div>
+                <div className="space-y-1.5">
+                  <p className="font-serif text-[14px] text-[#2C2A29]/90 leading-[1.8] max-w-[320px] mx-auto">
+                    想閱讀更多溫暖的微光故事嗎？登入帳號即可解鎖完整日記牆，並能寫下你的日記與送出心意回應。
+                  </p>
+                  {hiddenCount > 0 && (
+                    <p className="text-[11px] text-[#7A756E] tabular-nums">
+                      訪客試閱顯示前 {GUEST_DIARY_LIMIT} 篇 · 尚有 {hiddenCount} 篇公開日記等待解鎖
+                    </p>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={onOpenSignIn}
+                  className="min-h-[44px] px-6 rounded-[10px] bg-[#5C6B54] hover:bg-[#4D5B46] text-[#FFFDF9] text-[13px] font-medium transition-colors whitespace-nowrap cursor-pointer"
+                >
+                  立即登入 / 註冊
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </section>
