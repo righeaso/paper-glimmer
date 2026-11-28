@@ -1,17 +1,17 @@
 import {createClient, type SupabaseClient} from '@supabase/supabase-js';
 
-const rawViteUrl = (import.meta.env.VITE_SUPABASE_URL || '').trim();
-const rawNextUrl = (import.meta.env.NEXT_PUBLIC_SUPABASE_URL || '').trim();
+const rawViteUrl = (import.meta.env?.VITE_SUPABASE_URL || '').trim();
+const rawNextUrl = (import.meta.env?.NEXT_PUBLIC_SUPABASE_URL || '').trim();
 
-const rawViteAnonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim();
+const rawViteAnonKey = (import.meta.env?.VITE_SUPABASE_ANON_KEY || '').trim();
 const rawVitePubKey = (
-  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || ''
+  import.meta.env?.VITE_SUPABASE_PUBLISHABLE_KEY || ''
 ).trim();
 const rawNextAnonKey = (
-  import.meta.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+  import.meta.env?.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 ).trim();
 const rawNextPubKey = (
-  import.meta.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || ''
+  import.meta.env?.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || ''
 ).trim();
 
 const supabaseUrl = rawViteUrl || rawNextUrl;
@@ -67,12 +67,21 @@ export function getSupabaseEnvDiagnostic(): string {
   return [...urlItems, ...fallbackItems].join(' · ') + invalidUrlHint;
 }
 
-export const supabase: SupabaseClient | null = isSupabaseConfigured
-  ? createClient(supabaseUrl, supabaseKey, {
+function createSafeSupabaseClient(): SupabaseClient | null {
+  if (!isSupabaseConfigured) {
+    return null;
+  }
+  try {
+    return createClient(supabaseUrl, supabaseKey, {
       auth: {
         persistSession: true,
         autoRefreshToken: true,
         detectSessionInUrl: false,
       },
-    })
-  : null;
+    });
+  } catch {
+    return null;
+  }
+}
+
+export const supabase: SupabaseClient | null = createSafeSupabaseClient();

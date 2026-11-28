@@ -1,4 +1,4 @@
-const CACHE_NAME = 'paper-glimmer-static-v1';
+const CACHE_NAME = 'paper-glimmer-static-v2';
 
 const STATIC_ASSETS = [
   '/',
@@ -25,6 +25,15 @@ function shouldBypassCache(request) {
 
   // Never intercept or cache non-HTTP(S) schemes (e.g. chrome-extension://)
   if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    return true;
+  }
+
+  // Never intercept Vite dev server / HMR / unbundled source paths
+  if (
+    url.pathname.startsWith('/src/') ||
+    url.pathname.startsWith('/@') ||
+    url.pathname.startsWith('/node_modules/')
+  ) {
     return true;
   }
 
@@ -99,7 +108,10 @@ self.addEventListener('fetch', (event) => {
           }
           return response;
         })
-        .catch(() => caches.match('/index.html')),
+        .catch(async () => {
+          const cached = await caches.match('/index.html');
+          return cached || Response.error();
+        }),
     );
     return;
   }
@@ -119,7 +131,7 @@ self.addEventListener('fetch', (event) => {
           }
           return networkResponse;
         })
-        .catch(() => cachedResponse);
+        .catch(() => cachedResponse || Response.error());
 
       return cachedResponse || networkFetch;
     }),
